@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<!-- <link rel="stylesheet" src="index.css" /> -->
+<link rel="stylesheet" id="theme-link" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" id="iconlib-link" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css"
+  crossorigin="anonymous">
+
+<!-- Handlebars -->
+<script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js">
+  // Handlebars helper for displaying timestamps in human frindly format
+  Handlebars.registerHelper("TimeStampToDateTime", function (ts) {
+    return ts ? new Date(ts * 1000) : 'empty';
+  });
+</script>
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.3/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.3/dist/flatpickr.min.js"
+  integrity="sha256-/irFIZmSo2CKXJ4rxHWfrI+yGJuI16Z005X/bENdpTY=" crossorigin="anonymous"></script>
+
+<!-- <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@forevolve/bootstrap-dark@1.0.0/dist/css/bootstrap-dark.min.css" /> -->
+<!-- <link rel="stylesheet" href="/css/toggle-bootstrap-dark.min.css" />
+<link rel="stylesheet" href="/css/toggle-bootstrap-print.min.css" /> -->
+
+<body>
+  <style type="text/css">
+    html,
+    body,
+    .container-fluid {
+      height: 100%;
+      overflow: auto;
+      padding: 0 0rem;
+      margin: 0;
+      box-sizing: border-box !important;
+      max-width: unset;
+    }
+
+    body {
+      font-family: sans-serif;
+      overflow: hidden;
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    h4 {
+      font-size: 1rem;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .flex-fill {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .output {
+      padding: 15px 10px;
+      font-size: 14px;
+      overflow: auto;
+      border: 1px solid turquoise;
+      border-radius: 6px;
+      margin: 20px 0;
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    .timings {
+      margin-left: 10px;
+      width: 100px;
+      text-align: center;
+    }
+
+    .timings strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .output>div {
+      margin-bottom: 10px;
+    }
+
+    .options {
+      margin-top: 10px;
+    }
+
+    .options label {
+      margin-right: 15px;
+    }
+
+    .text {
+      max-width: 800px;
+      line-height: 1.4em;
+      margin-bottom: 10px;
+    }
+
+    .text.last {
+      margin-bottom: 15px;
+    }
+
+    .more {
+      display: none;
+    }
+
+    .more-text {
+      display: inline;
+      font-size: 13px;
+      color: #8080a0;
+      margin-left: 5px;
+      text-decoration: none;
+    }
+
+    #filter-options,
+    #relay-options {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #nostr-options {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    button {
+      border-radius: 0rem !important;
+    }
+
+    .je-object__container>.btn-group {
+      margin-left: 85vw;
+    }
+
+    .je-object__container>.btn-group>.je-modal {
+      left: unset !important;
+      right: 0;
+    }
+
+    div.row>div>div.card-body {
+      width: 10rem;
+      min-width: 10rem;
+    }
+
+    /* 
+    #relay_editor .btn-group div:last-of-type {
+      display: block !important;
+    } */
+
+    button span {
+      display: none;
+    }
+
+    .form-control {
+      height: 2rem;
+    }
+
+    .form-check {
+      align-items: flex-start;
+    }
+
+    .form-check label {
+      font-size: .8rem !important;
+      line-height: 1rem;
+      font-weight: 300;
+
+    }
+
+    #filter_editor .form-check label,
+    #filter_editor .form-check input {
+      font-size: .7rem !important;
+      line-height: .8rem;
+      height: .8rem;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    label {
+      font-size: 1rem !important;
+      margin: 0;
+      line-height: 1rem;
+    }
+
+    .table {
+      margin-bottom: 0;
+    }
+
+    .card-body {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+    }
+
+    .card-title {
+      margin: 0;
+      padding: 0;
+    }
+
+    .card-body th {
+      display: none;
+    }
+
+    .card-body div div {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .card-body div div div {
+      flex-direction: column;
+      gap: .1rem;
+      flex: none;
+    }
+
+    .card-body div div div.input-group,
+    .card-body div div div.input-group-append {
+      flex-direction: row;
+      gap: 0;
+      height: 2rem;
+    }
+
+    .card-body div div div.input-group-append button {
+      height: 2rem;
+    }
+
+    #filters_section {
+      padding: 0 2rem;
+    }
+
+    .array-property {
+      width: 20rem;
+    }
+
+    #nostr-options_text {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+    }
+
+    .form-group>label {
+      font-weight: bold;
+    }
+
+    #relay_editor .form-group>label {
+      font-size: 1.2rem !important;
+      padding-bottom: 1rem;
+    }
+
+    /* .card-body .card-body {
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: row;
+    } */
+  </style>
+
+  <div class="container-fluid">
+    <h1> nostr absurd sql bench </h1>
+    <div class="text">
+      This is sqlite3 running in your browser with a backend that
+      properly persists the database in IndexedDB
+      (<a href="https://github.com/jlongster/absurd-sql">absurd-sql</a>).
+      It stores each page from the db as a separate item, treating IDB
+      like a hard disk. It never has to load the full DB into memory
+      and can update it with small individual writes.
+    </div>
+
+    <div class="text last">
+      The below examples are meant to be stress tests, showing that it
+      can handle large amounts of data and queries that need to scan
+      all of it. With more normal cases and a small cache, it works
+      really well. It easily beats IndexedDB up to a factor of 10.
+    </div>
+
+    <div>
+      <!-- <button id="populateSmall" class="btn btn-secondary btn-sm">Write a little data</button>
+      <button id="populateLarge" class="btn btn-secondary btn-sm">Write lots of data</button> -->
+      <button id="populateFromRelay" class="btn btn-primary btn-sm">open relay subscription</button>
+      <!-- <button id="sumAll" class="btn btn-secondary btn-sm">Sum all values</button> -->
+      <button id="randomReads" class="btn btn-secondary btn-sm">read chunks of 1000 items</button>
+      <button id="updateSubscriptionFilters" disabled class="btn btn-secondary btn-sm">update subscription
+        filters</button>
+      <button id="updateSubscriptionRelays" disabled class="btn btn-secondary btn-sm">update subscription
+        relays</button>
+      <button id="unsubscribe" disabled class="btn btn-secondary btn-sm">unsubscribe</button>
+      <button id="deleteFile" class="btn btn-secondary btn-sm">delete db</button>
+      <!-- <a href="#" class="more-text">More</a> -->
+      <!-- <div class="more">
+        <button id="readBench" class="btn btn-secondary btn-sm">Run read benchmarks</button>
+        <button id="writeBench" class="btn btn-secondary btn-sm">Run write benchmarks</button>
+      </div> -->
+    </div>
+
+    <div class="options">
+      <label><input type="checkbox" name="profile"> Record performance profile</label>
+      <label><input type="checkbox" name="raw-indexeddb"> Use raw IndexedDB</label>
+    </div>
+
+    <div class="disable-if-raw-idb">
+      <div class="options">
+        Backend:
+        <label><input type="radio" name="backend" value="idb" checked> IndexedDB</label>
+        <label><input type="radio" name="backend" value="memory"> Memory</label>
+      </div>
+
+      <div class="options">
+        Cache size:
+        <label><input type="radio" name="cacheSize" value="0" checked> 0MB</label>
+        <label><input type="radio" name="cacheSize" value="2000"> 2MB</label>
+        <label><input type="radio" name="cacheSize" value="10000"> 10MB</label>
+        <label><input type="radio" name="cacheSize" value="60000"> 60MB</label>
+        <span class="warning" style="font-size: 13px; color: #8080a0">Using a cache will greatly improve perf, but no
+          cache shows the full number of read/writes</span>
+      </div>
+
+      <div class="options pageSize">
+        Page size:
+        <label><input type="radio" name="pageSize" value="4096" checked> 4096</label>
+        <label><input type="radio" name="pageSize" value="8192"> 8192</label>
+        <label><input type="radio" name="pageSize" value="16384"> 16384</label>
+      </div>
+    </div>
+
+    <div class="flex flex-fill">
+      <div class="output flex-fill"></div>
+      <div class="output timings">
+        <strong>timings</strong>
+        <div class="timings-data"></div>
+      </div>
+    </div>
+    <div id="nostr-options">
+      <h2> nostr relay subcription settings </h2>
+      <h3>filters</h3>
+      [
+      <div id='filters_section'>
+        <div id="filter_editors">
+          <!-- <div id="filter-1_editor" class='filter_editor'></div> -->
+        </div>
+        <div id='filters_section_buttons'>
+          <button type="button" title="add filter" id='add_filter_button'
+            class="btn btn-secondary btn-sm json-editor-btn-add json-editor-btntype-add">
+            <i class="fas fa-plus"></i>
+            add filter
+          </button>
+          <button type="button" title="delete all filters" id='delete_filters_button'
+            class="btn btn-secondary btn-sm json-editor-btn-delete delete json-editor-btntype-delete" data-i="0">
+            <i class="fas fa-trash"></i>
+            delete all filters
+          </button>
+        </div>
+      </div>
+      ]
+      <br>
+      <br>
+      <div id="relay_editor"></div>
+      <h3> JSON </h3>
+      <div id='nostr-options_text'>
+        <div id="filter_text" style="width: 100rem;">
+          <h4> filters </h4>
+          <textarea id='filter-textarea' rows="15" style="width: 100%; font-family: monospace;"></textarea>
+          <button class='btn btn-primary btn-block' id='setfilters'>update filters</button>
+
+        </div>
+        <div id="relay_text" style="width: 100%;">
+          <h4> relays </h4>
+          <textarea id='relay-textarea' rows="15" style="width: 100%; font-family: monospace;"></textarea>
+          <button class='btn btn-primary btn-block' id='setrelays'>update relays</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

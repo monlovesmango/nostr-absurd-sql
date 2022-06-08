@@ -37,6 +37,10 @@
     "src/**/*"
   ],
   "dependencies": {
+    "@json-editor/json-editor": "^2.8.0",
+    "mergebounce": "^0.1.1",
+    "nostr-tools": "^0.23.2",
+    "readable-stream": "^3.6.0",
     "safari-14-idb-fix": "^1.0.4"
   }
 }

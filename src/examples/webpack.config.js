@@ -19,7 +19,8 @@ function getConfig(name, entry, html) {
       fallback: {
         crypto: false,
         path: false,
-        fs: false
+        fs: false,
+        stream: require.resolve("readable-stream")
       }
     },
     plugins: [
@@ -39,5 +40,6 @@ function getConfig(name, entry, html) {
 
 module.exports = [
   getConfig('bench', './bench/main.js', './bench/index.html'),
+  getConfig('nostr_bench', './nostr_bench/main.js', './nostr_bench/index.html'),
   getConfig('fts', './fts/main.js', './fts/index.html')
 ];

@@ -1,3 +1,11 @@
+this is a fork of [absurd sql](https://github.com/jlongster/absurd-sql) that implements a nostr specific bench (absurd sql info below). feedback welcome on a better format to release this tool. assuming you are starting in root folder, commands to run nostr bench are (again, feedback welcome):
+
+```
+cd src/examples
+../../node_modules/.bin/webpack serve --config-name "nostr_bench"
+```
+
+NOTE: work on nostr bench is still in progress
 
 This is an absurd project.
 
