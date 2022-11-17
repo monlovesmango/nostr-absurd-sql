@@ -4,8 +4,11 @@ this is a fork of [absurd sql](https://github.com/jlongster/absurd-sql) that imp
 cd src/examples
 ../../node_modules/.bin/webpack serve --config-name "nostr_bench"
 ```
+and then open http://localhost:8080/ in your browser
 
 NOTE: work on nostr bench is still in progress
+
+##
 
 This is an absurd project.
 

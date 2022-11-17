@@ -20,6 +20,10 @@ export function clear(db, output) {
   });
 }
 
+export function create(db, output) {
+  return clear(db, output);
+}
+
 export function populate(db, count, output, outputTiming) {
   let start = Date.now();
   let trans = db.transaction(['kv'], 'readwrite');
@@ -52,7 +56,7 @@ export function saveEvents(db, events, output = console.log, outputTiming = cons
 
   return new Promise((resolve, reject) => {
     for (let i = 0; i < events.length; i++) {
-      let event = events[i];
+      let event = events[i].event;
       let id = event.id;
       let value = JSON.stringify(event);
       store.put(value, id);
@@ -65,8 +69,8 @@ export function saveEvents(db, events, output = console.log, outputTiming = cons
     trans.oncomplete = () => {
       let took = Date.now() - start;
       output('Done! Took: ' + took + ` for ${events.length} events`);
-      output('events inserted: ' + JSON.stringify(events));
-      outputTiming(took);
+      // output('events inserted: ' + JSON.stringify(events));
+      // outputTiming(took);
       resolve();
     };
     trans.onerror = reject;

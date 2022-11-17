@@ -18,33 +18,139 @@ async function clear(db, output = console.log) {
   output('Clearing existing data');
   db.exec(`
     BEGIN TRANSACTION;
-    DROP TABLE IF EXISTS kv;
-    CREATE TABLE kv (key TEXT, value TEXT);
+    DROP TABLE IF EXISTS nostr;
     COMMIT;
   `);
+  create(db, output);
+  output('Done');
+}
+async function create(db, output = console.log) {
+  output('creating tables and indexes');
+  db.create_function('handleInsertedEvent', event => {
+    console.log('handleInsertedEvent', event)
+  })
+  // relays TEXT NOT NULL,
+  // first_seen INTEGER NOT NULL,
+  // last_seen INTEGER NOT NULL,
+  // CREATE INDEX IF NOT EXISTS idx_temporary_first_seen ON nostr (first_seen) WHERE temporary = TRUE;
+  db.exec(`
+    BEGIN TRANSACTION;
+    CREATE TABLE IF NOT EXISTS nostr (
+      id TEXT PRIMARY KEY,
+      temporary BOOLEAN NOT NULL,
+      event TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_kind_created_at ON nostr (json_extract(event,'$.kind'), json_extract(event,'$.created_at'));
+    CREATE INDEX IF NOT EXISTS idx_kind_pubkey_created_at ON nostr (json_extract(event,'$.kind'), json_extract(event,'$.pubkey'), json_extract(event,'$.created_at'));
+    
+    CREATE TABLE IF NOT EXISTS idx_kind_tag_created_at (
+      kind INTEGER NOT NULL,
+      tag TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      id TEXT NOT NULL,
+      pubkey TEXT NOT NULL,
+      PRIMARY KEY(kind, tag, created_at, id)
+      );
+    CREATE TRIGGER IF NOT EXISTS nostr_tags_after_insert AFTER INSERT ON nostr 
+      WHEN json_array_length(json_extract(new.event,'$.tags')) > 0
+      BEGIN
+        INSERT OR IGNORE INTO idx_kind_tag_created_at (kind, tag, created_at, id)
+        SELECT DISTINCT json_extract(new.event, '$.kind'),
+          lower(iif(
+            instr(substr(tag.value, instr(tag.value, ',') + 1), ','),
+            substr(tag.value, 1, instr(tag.value, ',') + instr(substr(tag.value, instr(tag.value, ',') + 1), ',') - 1)||']',
+            tag.value
+          )),
+          json_extract(new.event, '$.created_at'),
+          new.id,
+          json_extract(new.event, '$.pubkey')
+        FROM json_each(json_extract(new.event, '$.tags')) AS tag;
+      END;
+    CREATE TRIGGER IF NOT EXISTS nostr_tags_after_delete AFTER DELETE ON nostr 
+      WHEN json_array_length(json_extract(old.event,'$.tags')) > 0
+      BEGIN
+        DELETE FROM idx_kind_tag_created_at
+        WHERE kind = json_extract(old.event,'$.kind') AND
+          tag in (
+            SELECT lower(iif(
+                instr(substr(tag.value, instr(tag.value, ',') + 1), ','),
+                substr(tag.value, 1, instr(tag.value, ',') + instr(substr(tag.value, instr(tag.value, ',') + 1), ',') - 1)||']',
+                tag.value
+              ))
+            FROM json_each(json_extract(old.event,'$.tags')) AS tag
+          ) AND
+          created_at = json_extract(old.event,'$.created_at') AND
+          id = old.id;
+      END;
+      CREATE TRIGGER IF NOT EXISTS nostr_after_insert AFTER INSERT ON nostr 
+        BEGIN
+          SELECT handleInsertedEvent(new.event) AS '';
+        END;
+    COMMIT;`
+  );
   output('Done');
 }
 
-function populate(db, count, output = console.log, outputTiming = console.log) {
-  let start = Date.now();
-  db.exec('BEGIN TRANSACTION');
-  let stmt = db.prepare('INSERT INTO kv (key, value) VALUES (?, ?)');
+// CREATE INDEX IF NOT EXISTS idx_kind_tag_created_at ON nostr (json_extract(event,'$.kind'), json_each(json_extract(event,'$.tags')), json_extract(event,'$.created_at'));
+// function populate(db, count, output = console.log, outputTiming = console.log) {
+//   let start = Date.now();
+//   db.exec('BEGIN TRANSACTION');
+//   let stmt = db.prepare('INSERT INTO kv (key, value) VALUES (?, ?)');
 
-  output(`Inserting ${formatNumber(count)} items`);
+//   output(`Inserting ${formatNumber(count)} items`);
 
-  for (let i = 0; i < count; i++) {
-    stmt.run([uid(i), ((Math.random() * 100) | 0).toString()]);
-  }
-  db.exec('COMMIT');
-  let took = Date.now() - start;
-  output('Done! Took: ' + took);
-  outputTiming(took);
-}
+//   for (let i = 0; i < count; i++) {
+//     stmt.run([uid(i), ((Math.random() * 100) | 0).toString()]);
+//   }
+//   db.exec('COMMIT');
+//   let took = Date.now() - start;
+//   output('Done! Took: ' + took);
+//   outputTiming(took);
+// }
 
 function saveEvents(db, events, output = console.log, outputTiming = console.log) {
   let start = Date.now();
-  db.exec('BEGIN TRANSACTION');
-  let stmt = db.prepare('INSERT INTO kv (key, value) VALUES (?, ?)');
+  // console.log(`saving ${events.length} events...`)
+  function updateRelaysColumn(newList, existingList) {
+    let relays = JSON.parse(existingList);
+    let relay = JSON.parse(newList)[0]
+    if (relays.includes(relay)) return existingList;
+    else {
+      relays.push(relay)
+      return JSON.stringify(relays);
+    }
+  }
+  function firstObjectKey(obj) {
+    return Object.keys(JSON.parse(obj))[0]
+  }
+  // db.create_function('update_relays_column', updateRelaysColumn);
+  // db.create_function('first_object_key', firstObjectKey);
+  db.exec(`BEGIN TRANSACTION;
+  `);
+  // db.exec(`BEGIN TRANSACTION;
+  // `);
+  // let stmt = db.prepare('INSERT INTO kv (key, value) VALUES (?, ?)');
+
+  // INSERT INTO nostr (id, relays, first_seen, last_seen, temporary, event)
+  // VALUES(?, ?, strftime('%s', 'now'), strftime('%s', 'now'), ?, ?)
+  // ON CONFLICT(id) DO UPDATE SET
+  // relays=relays||" "||excluded.relays,
+  // last_seen=strftime('%s', 'now')
+  // WHERE INSTR(relays, excluded.relays) = 0;
+  let stmt = db.prepare(`
+  INSERT INTO nostr (id, temporary, event)
+    VALUES(?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+    event=json_set(
+      event,
+      '$.seen_on',json_insert(json_extract(event,'$.seen_on'),'$[#]',json_extract(excluded.event,'$.seen_on[0]')),
+      '$.last_seen',json_extract(excluded.event,'$.last_seen')
+    )
+    WHERE INSTR(json_extract(event,'$.seen_on'), json_extract(excluded.event,'$.seen_on[0]')) = 0;
+    `);
+  // relays=relays||","||excluded.relays;
+  // relays=json_insert(relays,first_object_key(excluded.relays),true;
+  // relays=update_relays_column(excluded.relays,relays);
 
   // output(`Inserting ${formatNumber(count)} items`);
 
@@ -52,14 +158,20 @@ function saveEvents(db, events, output = console.log, outputTiming = console.log
   //   stmt.run([uid(i), ((Math.random() * 100) | 0).toString()]);
   // }
   for (let i = 0; i < events.length; i++) {
-    let event = events[i];
-    stmt.run([event.id, JSON.stringify(event)]);
+    let event = events[i].event;
+    let relay = events[i].relay;
+    event.seen_on = [];
+    event.first_seen = Math.round(Date.now() / 1000);
+    event.last_seen = Math.round(Date.now() / 1000);
+    if (relay) event.seen_on.push(relay);
+    stmt.run([event.id, false, JSON.stringify(event)]);
   }
   db.exec('COMMIT');
+  stmt.free();
   let took = Date.now() - start;
   output('Done! Took: ' + took + ` for ${events.length} events`);
-  output('events inserted: ' + JSON.stringify(events));
-  outputTiming(took);
+  // output('events inserted: ' + JSON.stringify(events));
+  // outputTiming(took);
 }
 
 function sumAll(db, output = console.log, outputTiming = console.log) {
@@ -155,4 +267,45 @@ async function randomReads(
   output('Done reading, took ' + formatNumber(took) + 'ms');
 }
 
-module.exports = { clear, populate, saveEvents, sumAll, randomReads };
+async function query(
+  db,
+  queryStmt,
+  output = console.log,
+  outputTiming = console.log
+) {
+  output(`Running <code>${queryStmt}</code>`);
+  // output('Running <code>SELECT COUNT(*) FROM kv</code>');
+
+  // let stmt;
+  // try {
+  //   stmt = db.prepare(`SELECT SUM(value) FROM kv`);
+  // } catch (err) {
+  //   output('Error (make sure you write data first): ' + err.message);
+  //   throw err;
+  // }
+
+  let start = performance.now();
+  // let row;
+  let results = db.exec(queryStmt)
+
+  // if (stmt.all) {
+  //   let row = stmt.all();
+  //   output(JSON.stringify(row));
+  // } else {
+  //   while (stmt.step()) {
+  //     row = stmt.getAsObject();
+  //   }
+  //   stmt.free();
+  // }
+
+  let took = performance.now() - start;
+  // output('<code>' + JSON.stringify(row) + '</code>');
+
+  outputTiming(took);
+  output('Done reading, took ' + formatNumber(took) + 'ms');
+  output('That scanned through all of the data');
+  return results;
+}
+
+module.exports = { clear, create, saveEvents, sumAll, randomReads, query };
+// module.exports = { clear, populate, saveEvents, sumAll, randomReads };

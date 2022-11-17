@@ -62,6 +62,10 @@ function outputTiming(timing) {
   self.postMessage({ type: 'outputTiming', timing });
 }
 
+// function outputResults(results) {
+//   self.postMessage({ type: 'outputresults', results });
+// }
+
 let _db = null;
 function closeDatabase() {
   if (_db) {
@@ -198,7 +202,7 @@ async function populateFromRelay(filters, relays) {
   let q = useRawIDB ? rawIDBQueries : queries;
   let db = await getDatabase();
 
-  q.clear(db, output);
+  q.create(db, output);
 
   if (recordProfile) {
     sqlFS.backend.startProfile();
@@ -220,8 +224,8 @@ async function populateFromRelay(filters, relays) {
   relayWorker.addEventListener('message', e => {
     switch (e.data.type) {
       case 'event': {
-        console.log(e.data);
-        // debouncedSaveEvents([e.data.event])
+        // console.log(e.data);
+        debouncedSaveEvents([e.data])
         lastSave = Date.now();
         break;
       }
@@ -313,6 +317,24 @@ async function randomReads({ clear = true } = {}) {
   }
 }
 
+// async function query(queryStmt, { clear = true } = {}) {
+//   if (clear) {
+//     clearTimings();
+//   }
+
+//   let q = useRawIDB ? rawIDBQueries : queries;
+//   let db = await getDatabase();
+//   if (recordProfile) {
+//     sqlFS.backend.startProfile();
+//   }
+
+//   let results = await q.query(db, queryStmt, output, outputTiming);
+
+//   if (recordProfile) {
+//     sqlFS.backend.stopProfile();
+//   }
+// }
+
 async function prepBench() {
   clearTimings();
 
@@ -380,6 +402,7 @@ let methods = {
   updateSubscriptionFilters,
   updateSubscriptionRelays,
   unsubscribe,
+  // query,
   sumAll,
   randomReads,
   deleteFile,
@@ -417,6 +440,7 @@ if (typeof self !== 'undefined') {
         break;
 
       case 'run-query': {
+        console.log('main.worker run-query')
         getDatabase().then(db => {
           let stmt = db.prepare(msg.data.sql);
           let rows = [];
@@ -468,6 +492,7 @@ if (typeof self !== 'undefined') {
           case 'pageSize': {
             closeDatabase();
             pageSize = parseInt(msg.data.value);
+            console.log(msg.data);
             // This will force the db to load which checks the
             // requested page size and vacuums if necessary
             getDatabase();

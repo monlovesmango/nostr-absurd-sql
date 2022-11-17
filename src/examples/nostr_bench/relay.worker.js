@@ -1,4 +1,5 @@
 import { relayPool } from 'nostr-tools'
+// import { relayPool } from './test.js'
 /**
  * 1. when socket is opened send the flag to socket.
  * 2. Send the data to the client for dsiabling the start connection worker via webworker. Do the same while closing the connection.
@@ -12,7 +13,7 @@ let relays = [];
 // let socketInstance = null;
 
 function onEvent(event, relay) {
-    postMessage(`[RELAY WORKER] Web worker got this event from ${relay}: ${JSON.stringify(event, null, 2)}`)
+    // postMessage(`[RELAY WORKER] Web worker got this event from ${relay}: ${JSON.stringify(event, null, 2)}`)
     postMessage({ type: 'event', event, relay })
 }
 
@@ -27,8 +28,8 @@ function createSubscriptionInstance(filters, relays) {
     //         console.log(`got an event from ${relay}.`, event)
     //     }, filter: filters
     // })
-    let sub = pool.sub({ cb: onEvent, filter: filters })
-    return sub
+    // subscription = pool.sub({ cb: onEvent, filter: filters })
+    return pool.sub({ cb: onEvent, filter: filters })
 }
 
 // function socketManagement() {
@@ -93,10 +94,10 @@ self.onmessage = function (e) {
         case "updateRelays":
             // subscription.sub({filter: workerData.filters})
             relays.forEach(relay => {
-                if (!workerData.relays.includes(relay)) subscription.removeRelay(relay)
+                if (!workerData.relays.includes(relay)) pool.removeRelay(relay)
             })
             workerData.relays.forEach(relay => {
-                if (!relays.includes(relay)) subscription.addRelay(relay, { read: true, write: false })
+                if (!relays.includes(relay)) pool.addRelay(relay)
             })
             relays = workerData.relays;
             postMessage(`[RELAY WORKER] Web worker updated subscription relays to ${JSON.stringify(relays, null, 2)}`);

@@ -16,6 +16,9 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.3/dist/flatpickr.min.js"
   integrity="sha256-/irFIZmSo2CKXJ4rxHWfrI+yGJuI16Z005X/bENdpTY=" crossorigin="anonymous"></script>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.js"></script>
+
 <!-- <link rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/@forevolve/bootstrap-dark@1.0.0/dist/css/bootstrap-dark.min.css" /> -->
 <!-- <link rel="stylesheet" href="/css/toggle-bootstrap-dark.min.css" />
@@ -261,6 +264,10 @@
       padding-bottom: 1rem;
     }
 
+    #commands {
+      width: 100%;
+    }
+
     /* .card-body .card-body {
       padding: 0;
       margin: 0;
@@ -343,6 +350,22 @@
         <div class="timings-data"></div>
       </div>
     </div>
+    <div id="query-options">
+      <h2> sql query </h2>
+      <!-- <label for='commands'>Enter some SQL</label> -->
+      <!-- <br> -->
+
+      <textarea id="commands">SELECT * FROM nostr;</textarea>
+      <div style='display: flex; flex-direction: row; gap: 1rem; padding: .5rem 0; align-items: center'>
+        <button id="execute" class="btn btn-secondary btn-sm">Execute</button>
+        <button id='savedb' class="btn btn-secondary btn-sm">Save the db</button>
+        <label class="button">Load an SQLite database file: <input type='file' id='dbfile' /></label>
+      </div>
+
+      <div id="error" class="error"></div>
+
+      <pre id="output">Results will be displayed here</pre>
+    </div>
     <div id="nostr-options">
       <h2> nostr relay subcription settings </h2>
       <h3>filters</h3>
@@ -385,4 +408,7 @@
       </div>
     </div>
   </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/sql/sql.min.js"></script>
+
+  <!-- <script type="text/javascript" src="main.js"></script> -->
 </body>

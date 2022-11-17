@@ -1,0 +1,94 @@
+indexes
+- id (default)
+- kind, pubkey, created
+- kind, created
+- kind, tag, created
+# - temporary, first_seen
+
+feed
+- filter:
+    - kind 1, 2
+    - since 1 day ago
+- index: 
+    - created
+
+mentions
+- filter:
+    - kind 1
+    - tag ['p', pubkey]
+- index:
+    - tag
+
+messages-sent
+- filter:
+    - kind 4
+    - pubkey
+- index:
+    - tag
+
+messages-received
+- filter:
+    - kind 4
+    - tag ['p', pubkey]
+- index:
+    - pubkey
+
+profile
+- filter:
+    - kind 0, 1, 3
+    - pubkey
+- index: 
+    - pubkey
+
+event
+- filter:
+    - id
+    or
+    - tag ['e', eventId]
+- index: 
+    - id
+    - tag
+
+hastag
+- filter:
+    - tag ['hastag', eventId]
+- index: 
+    - tag
+
+
+columns:
+- temporary
+    - if to/from me, or from follows: false
+    - else: true
+- first_seen
+- last_seen
+
+
+when to prune???
+
+
+relay filters
+main sub: 
+- user pubkey and all kinds
+- tags for user pubkey and all kinds
+adhoc: 
+- feed (kinds 1,2 and since)
+- profile (kinds 0,1,2,3 and pubkey)
+- event (id)
+- tag (tag)
+
+relay functions:
+-sub
+-unsub
+-update relays
+-add/remove filter
+
+implementation todo:
+verify dbSave doesn't have scenarios where relay is an arg
+update args for
+-dbGetHomeFeedNotes
+-onNewHomeFeedNote
+don't save messages from future, remove start key from dbGetUnreadNotificationsCount & dbGetUnreadMessages
+
+note: to run go into examples folder, enter this:
+../../node_modules/.bin/webpack serve --config-name "astral_bench"
